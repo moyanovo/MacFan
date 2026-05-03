@@ -6,14 +6,14 @@ final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let store: FanStateStore
     private let loginItemManager: LoginItemManager
-    private let panelController: NativeMenuPanelController
+    private let menuController: NativeStatusMenuController
     private var timer: Timer?
 
     init(store: FanStateStore, loginItemManager: LoginItemManager) {
         self.store = store
         self.loginItemManager = loginItemManager
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        panelController = NativeMenuPanelController(
+        menuController = NativeStatusMenuController(
             store: store,
             loginItemManager: loginItemManager,
             onQuit: { [weak store] in
@@ -24,14 +24,15 @@ final class MenuBarController: NSObject {
             }
         )
         super.init()
-        panelController.closeHandler = { [weak self] in
-            self?.statusItem.button?.highlight(false)
+        menuController.openHandler = { [weak self] in
+            self?.startOpenStateTimer()
+        }
+        menuController.closeHandler = { [weak self] in
             self?.startClosedStateTimer()
         }
 
         statusItem.button?.title = "--°"
-        statusItem.button?.target = self
-        statusItem.button?.action = #selector(togglePanel(_:))
+        statusItem.menu = menuController.menu
 
         startClosedStateTimer()
     }
@@ -62,17 +63,6 @@ final class MenuBarController: NSObject {
             statusItem.button?.title = "\(temperature)°"
         } else {
             statusItem.button?.title = "--°"
-        }
-    }
-
-    @objc private func togglePanel(_ sender: AnyObject?) {
-        guard let button = statusItem.button else { return }
-        if panelController.isShown {
-            panelController.close()
-        } else {
-            statusItem.button?.highlight(true)
-            startOpenStateTimer()
-            panelController.show(anchor: button)
         }
     }
 }
