@@ -51,6 +51,10 @@ PLIST
 
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
+if command -v xattr >/dev/null 2>&1; then
+  xattr -cr "$APP" >/dev/null 2>&1 || true
+fi
+
 if command -v codesign >/dev/null 2>&1; then
   codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
 fi
