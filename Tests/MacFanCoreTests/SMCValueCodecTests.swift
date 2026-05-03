@@ -18,6 +18,11 @@ struct SMCValueCodecTests {
         #expect(SMCValueCodec.encodeFpe2(7200) == [0x70, 0x80])
     }
 
+    @Test func decodesNativeFloat() {
+        let bytes = SMCValueCodec.encodeFloat(1234.5)
+        #expect(SMCValueCodec.decodeFloat(bytes) == 1234.5)
+    }
+
     @Test func encodesUInt16BigEndian() {
         #expect(SMCValueCodec.encodeUInt16(1) == [0x00, 0x01])
         #expect(SMCValueCodec.encodeUInt16(0) == [0x00, 0x00])

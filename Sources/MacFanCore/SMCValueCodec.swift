@@ -14,6 +14,21 @@ public enum SMCValueCodec {
         return Int((Double(raw) / 4.0).rounded())
     }
 
+    public static func decodeFloat(_ bytes: [UInt8]) -> Float? {
+        guard bytes.count >= 4 else { return nil }
+        return bytes.withUnsafeBytes { rawBuffer in
+            rawBuffer.loadUnaligned(as: Float.self)
+        }
+    }
+
+    public static func encodeFloat(_ value: Float) -> [UInt8] {
+        var result = [UInt8](repeating: 0, count: 4)
+        withUnsafeBytes(of: value) { rawBuffer in
+            for index in 0..<4 { result[index] = rawBuffer[index] }
+        }
+        return result
+    }
+
     public static func encodeFpe2(_ rpm: Int) -> [UInt8] {
         let clamped = max(0, min(rpm, Int(UInt16.max / 4)))
         let raw = UInt16(clamped * 4)

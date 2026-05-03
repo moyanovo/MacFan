@@ -49,13 +49,25 @@ struct AppFanControlClient: FanControlClient {
     }
 
     private static func defaultHelperURL() -> URL? {
+        let fileManager = FileManager.default
         if let override = ProcessInfo.processInfo.environment["MACFAN_HELPER_PATH"], !override.isEmpty {
             return URL(fileURLWithPath: override)
         }
+
+        let installed = URL(fileURLWithPath: "/Library/PrivilegedHelperTools/com.moyanovo.MacFanHelper")
+        if fileManager.isExecutableFile(atPath: installed.path) {
+            return installed
+        }
+
+        if let bundled = Bundle.main.url(forResource: "MacFanHelper", withExtension: nil),
+           fileManager.isExecutableFile(atPath: bundled.path) {
+            return bundled
+        }
+
         let executable = Bundle.main.executableURL
         let productDirectory = executable?.deletingLastPathComponent()
         let sibling = productDirectory?.appendingPathComponent("MacFanHelper")
-        if let sibling, FileManager.default.isExecutableFile(atPath: sibling.path) {
+        if let sibling, fileManager.isExecutableFile(atPath: sibling.path) {
             return sibling
         }
         return nil
