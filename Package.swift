@@ -25,6 +25,11 @@ let package = Package(
             dependencies: ["MacFanCore"],
             linkerSettings: [.linkedFramework("IOKit")]
         ),
-        .testTarget(name: "MacFanCoreTests", dependencies: ["MacFanCore"])
+        .testTarget(
+            name: "MacFanCoreTests",
+            dependencies: ["MacFanCore"],
+            swiftSettings: [.unsafeFlags(["-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks"])],
+            linkerSettings: [.unsafeFlags(["-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks", "-L", "/Library/Developer/CommandLineTools/Library/Developer/usr/lib", "-Xlinker", "-rpath", "-Xlinker", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks", "-Xlinker", "-rpath", "-Xlinker", "/Library/Developer/CommandLineTools/Library/Developer/usr/lib"])]
+        )
     ]
 )
