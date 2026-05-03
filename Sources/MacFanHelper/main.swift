@@ -1,0 +1,1 @@
+print("MacFanHelper unavailable")
