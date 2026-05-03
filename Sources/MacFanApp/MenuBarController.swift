@@ -1,29 +1,19 @@
 import AppKit
 import MacFanCore
-import SwiftUI
 
 @MainActor
-final class MenuBarController: NSObject, NSPopoverDelegate {
+final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
-    private let popover: NSPopover
     private let store: FanStateStore
     private let loginItemManager: LoginItemManager
+    private let panelController: NativeMenuPanelController
     private var timer: Timer?
 
     init(store: FanStateStore, loginItemManager: LoginItemManager) {
         self.store = store
         self.loginItemManager = loginItemManager
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        popover = NSPopover()
-        super.init()
-
-        statusItem.button?.title = "--°"
-        statusItem.button?.target = self
-        statusItem.button?.action = #selector(togglePopover(_:))
-
-        popover.behavior = .transient
-        popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: PopoverView(
+        panelController = NativeMenuPanelController(
             store: store,
             loginItemManager: loginItemManager,
             onQuit: { [weak store] in
@@ -32,7 +22,16 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
                     NSApp.terminate(nil)
                 }
             }
-        ))
+        )
+        super.init()
+        panelController.closeHandler = { [weak self] in
+            self?.statusItem.button?.highlight(false)
+            self?.startClosedStateTimer()
+        }
+
+        statusItem.button?.title = "--°"
+        statusItem.button?.target = self
+        statusItem.button?.action = #selector(togglePanel(_:))
 
         startClosedStateTimer()
     }
@@ -66,18 +65,14 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
     }
 
-    @objc private func togglePopover(_ sender: AnyObject?) {
+    @objc private func togglePanel(_ sender: AnyObject?) {
         guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(sender)
+        if panelController.isShown {
+            panelController.close()
         } else {
+            statusItem.button?.highlight(true)
             startOpenStateTimer()
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            panelController.show(anchor: button)
         }
-    }
-
-    func popoverDidClose(_ notification: Notification) {
-        startClosedStateTimer()
     }
 }

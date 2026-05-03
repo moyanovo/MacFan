@@ -16,8 +16,7 @@ let package = Package(
             dependencies: ["MacFanCore"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
-                .linkedFramework("ServiceManagement"),
-                .linkedFramework("SwiftUI")
+                .linkedFramework("ServiceManagement")
             ]
         ),
         .executableTarget(
