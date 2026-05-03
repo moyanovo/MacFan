@@ -1,8 +1,8 @@
 import Foundation
 
 public enum PerformancePolicy {
-    public static let closedPopoverTemperatureInterval: TimeInterval = 5.0
-    public static let openPopoverRefreshInterval: TimeInterval = 1.0
+    public static let closedMenuTemperatureInterval: TimeInterval = 5.0
+    public static let openMenuRefreshInterval: TimeInterval = 1.0
 }
 
 public struct ManualWritePolicy: Sendable {

@@ -35,17 +35,33 @@ struct SMCClient {
     func restoreSystemAuto() throws {
         let smc = try SMCConnection()
         let fanCount = max(smc.readFanCount(), 1)
+        var attemptedWrite = false
+        var firstError: Error?
+
         if let modeFormat = smc.detectModeKeyFormat() {
             for fanIndex in 0..<fanCount {
-                try? smc.writeMode(key: String(format: modeFormat, fanIndex), mode: 0)
+                attemptedWrite = true
+                do {
+                    try smc.writeMode(key: String(format: modeFormat, fanIndex), mode: 0)
+                } catch {
+                    if firstError == nil { firstError = error }
+                }
             }
         }
         if smc.keyExists("Ftst") {
-            try? smc.writeUInt8(key: "Ftst", value: 0)
+            attemptedWrite = true
+            do {
+                try smc.writeUInt8(key: "Ftst", value: 0)
+            } catch {
+                if firstError == nil { firstError = error }
+            }
         }
+
+        if let firstError { throw firstError }
+        guard attemptedWrite else { throw SMCClientError.keyReadFailed("fan mode") }
     }
 
-    func setTargetRPM(_ rpm: Int) throws {
+    func setTargetRPM(_ rpm: Int) throws -> Int {
         guard rpm > 0 else { throw SMCClientError.invalidRPM }
         let smc = try SMCConnection()
         let fanIndex = 0
@@ -64,7 +80,13 @@ struct SMCClient {
             try smc.retryModeUnlock(modeKey: modeKey)
         }
 
-        try smc.writeRPM(key: "F0Tg", rpm: safeRPM)
+        do {
+            try smc.writeRPM(key: "F0Tg", rpm: safeRPM)
+        } catch {
+            try? restoreSystemAuto()
+            throw error
+        }
+        return safeRPM
     }
 
     private func unavailableSnapshot(reason: String) -> String {
@@ -85,7 +107,6 @@ enum SMCClientError: Error {
     case firmware(UInt8)
     case timeout
     case keyReadFailed(String)
-    case keyWriteFailed(String)
 }
 
 private final class SMCConnection {
@@ -283,7 +304,6 @@ private enum SMCCommand: UInt8 {
     case kernelIndex = 2
     case readBytes = 5
     case writeBytes = 6
-    case readIndex = 8
     case readKeyInfo = 9
 }
 

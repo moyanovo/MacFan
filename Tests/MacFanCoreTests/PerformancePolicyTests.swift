@@ -3,12 +3,12 @@ import Testing
 
 @Suite
 struct PerformancePolicyTests {
-    @Test func closedPopoverPollingIsLowFrequency() {
-        #expect(PerformancePolicy.closedPopoverTemperatureInterval == 5.0)
+    @Test func closedMenuPollingIsLowFrequency() {
+        #expect(PerformancePolicy.closedMenuTemperatureInterval == 5.0)
     }
 
-    @Test func openPopoverPollingIsStillModerate() {
-        #expect(PerformancePolicy.openPopoverRefreshInterval == 1.0)
+    @Test func openMenuPollingIsStillModerate() {
+        #expect(PerformancePolicy.openMenuRefreshInterval == 1.0)
     }
 
     @Test func manualRPMWritesAreThrottledByTimeAndDelta() {

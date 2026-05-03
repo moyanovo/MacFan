@@ -1,6 +1,10 @@
 import Foundation
 import MacFanCore
 
+enum AppFanControlClientError: Error {
+    case helperFailed
+}
+
 struct AppFanControlClient: FanControlClient {
     private let helperURL: URL?
 
@@ -16,11 +20,15 @@ struct AppFanControlClient: FanControlClient {
     }
 
     func restoreSystemAuto() async throws {
-        _ = await runHelper(arguments: ["auto"])
+        guard await runHelper(arguments: ["auto"]) != nil else {
+            throw AppFanControlClientError.helperFailed
+        }
     }
 
     func setTargetRPM(_ rpm: Int) async throws {
-        _ = await runHelper(arguments: ["rpm", String(rpm)])
+        guard await runHelper(arguments: ["rpm", String(rpm)]) != nil else {
+            throw AppFanControlClientError.helperFailed
+        }
     }
 
     private func runHelper(arguments: [String]) async -> String? {
@@ -28,12 +36,14 @@ struct AppFanControlClient: FanControlClient {
         return await withCheckedContinuation { continuation in
             let process = Process()
             let output = Pipe()
+            let errorOutput = Pipe()
             process.executableURL = helperURL
             process.arguments = arguments
             process.standardOutput = output
-            process.standardError = Pipe()
+            process.standardError = errorOutput
             process.terminationHandler = { process in
                 let data = output.fileHandleForReading.readDataToEndOfFile()
+                _ = errorOutput.fileHandleForReading.readDataToEndOfFile()
                 guard process.terminationStatus == 0, let string = String(data: data, encoding: .utf8) else {
                     continuation.resume(returning: nil)
                     return

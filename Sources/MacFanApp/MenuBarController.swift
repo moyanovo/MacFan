@@ -5,13 +5,12 @@ import MacFanCore
 final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let store: FanStateStore
-    private let loginItemManager: LoginItemManager
     private let menuController: NativeStatusMenuController
     private var timer: Timer?
+    private var isRefreshing = false
 
     init(store: FanStateStore, loginItemManager: LoginItemManager) {
         self.store = store
-        self.loginItemManager = loginItemManager
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         menuController = NativeStatusMenuController(
             store: store,
@@ -25,7 +24,7 @@ final class MenuBarController: NSObject {
         )
         super.init()
         menuController.openHandler = { [weak self] in
-            self?.startOpenStateTimer()
+            self?.startOpenStateTimer(refreshNow: false)
         }
         menuController.closeHandler = { [weak self] in
             self?.startClosedStateTimer()
@@ -40,24 +39,34 @@ final class MenuBarController: NSObject {
     private func startClosedStateTimer() {
         timer?.invalidate()
         Task { await refreshStatusTitle() }
-        timer = Timer.scheduledTimer(withTimeInterval: PerformancePolicy.closedPopoverTemperatureInterval, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: PerformancePolicy.closedMenuTemperatureInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.refreshStatusTitle()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
-    private func startOpenStateTimer() {
+    private func startOpenStateTimer(refreshNow: Bool = true) {
         timer?.invalidate()
-        Task { await refreshStatusTitle() }
-        timer = Timer.scheduledTimer(withTimeInterval: PerformancePolicy.openPopoverRefreshInterval, repeats: true) { [weak self] _ in
+        if refreshNow {
+            Task { await refreshStatusTitle() }
+        }
+        let timer = Timer(timeInterval: PerformancePolicy.openMenuRefreshInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.refreshStatusTitle()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     private func refreshStatusTitle() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
         await store.refreshSnapshot()
         if let temperature = store.snapshot.temperatureCelsius {
             statusItem.button?.title = "\(temperature)°"

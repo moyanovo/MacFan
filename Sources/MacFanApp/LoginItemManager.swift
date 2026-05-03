@@ -2,18 +2,17 @@ import Foundation
 import ServiceManagement
 
 @MainActor
-final class LoginItemManager: ObservableObject {
-    @Published private(set) var hasAskedLaunchAtLogin: Bool
-    @Published private(set) var isLaunchAtLoginEnabled: Bool
+final class LoginItemManager {
+    private(set) var hasAskedLaunchAtLogin: Bool
+    private(set) var isLaunchAtLoginEnabled: Bool
 
     private let defaults: UserDefaults
     private let askedKey = "hasAskedLaunchAtLogin"
-    private let enabledKey = "isLaunchAtLoginEnabled"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         hasAskedLaunchAtLogin = defaults.bool(forKey: askedKey)
-        isLaunchAtLoginEnabled = defaults.bool(forKey: enabledKey)
+        isLaunchAtLoginEnabled = Self.isMainAppRegistered
     }
 
     func markAsked() {
@@ -29,12 +28,14 @@ final class LoginItemManager: ObservableObject {
                 try SMAppService.mainApp.unregister()
             }
             isLaunchAtLoginEnabled = enabled
-            defaults.set(enabled, forKey: enabledKey)
             markAsked()
         } catch {
             isLaunchAtLoginEnabled = false
-            defaults.set(false, forKey: enabledKey)
             markAsked()
         }
+    }
+
+    private static var isMainAppRegistered: Bool {
+        SMAppService.mainApp.status == .enabled
     }
 }

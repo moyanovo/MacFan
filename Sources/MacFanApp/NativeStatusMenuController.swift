@@ -207,7 +207,6 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
         manualValueLabel?.stringValue = "\(rpm) RPM"
         Task {
             try? await store.setManualRPM(rpm)
-            await store.refreshSnapshot()
         }
     }
 

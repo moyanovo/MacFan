@@ -1,11 +1,10 @@
-import Combine
 import Foundation
 
 @MainActor
-public final class FanStateStore: ObservableObject {
-    @Published public private(set) var mode: FanMode = .systemAuto
-    @Published public private(set) var snapshot: FanSnapshot = .unavailable
-    @Published public private(set) var lastErrorMessage: String?
+public final class FanStateStore {
+    public private(set) var mode: FanMode = .systemAuto
+    public private(set) var snapshot: FanSnapshot = .unavailable
+    public private(set) var lastErrorMessage: String?
 
     private let client: any FanControlClient
     private let manualWritePolicy: ManualWritePolicy
@@ -19,6 +18,11 @@ public final class FanStateStore: ObservableObject {
 
     public func refreshSnapshot() async {
         snapshot = await client.snapshot()
+        if !snapshot.isControlAvailable {
+            mode = .systemAuto
+            lastManualWriteTime = nil
+            lastManualRPM = nil
+        }
     }
 
     public func returnToSystemAuto() async throws {

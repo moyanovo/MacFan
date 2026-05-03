@@ -12,17 +12,17 @@ Implemented now:
 
 - Native Swift/AppKit menu bar app with no Dock icon.
 - Menu bar title shows CPU / SoC temperature when the helper can read it, otherwise `--°`.
-- Native SwiftUI popover with macOS material styling.
+- Native macOS status-item menu (`NSMenu`) so the opened menu uses the system menu bar style.
 - Default `System Auto` mode.
 - Manual presets: `Silent`, `Balanced`, `Cool`, `Max`.
 - Manual linear RPM slider with throttled writes.
-- First-launch `Launch MacFan at login?` prompt plus popover toggle.
+- First-launch `Launch MacFan at login?` prompt plus menu toggle.
 - Bottom `Quit MacFan` button that asks the helper to restore System Auto before quitting.
-- Best-effort AppleSMC helper boundary with safe fallback.
+- AppleSMC helper boundary with safe fallback.
 
 ## Important beta-system note
 
-On the current macOS 26.5 beta machine, the helper can open the AppleSMC service but direct SMC key reads currently return unavailable. The app therefore safely displays `--°` and disables fan controls instead of crashing or retrying aggressively.
+On the current macOS 26.5 beta machine, the helper can read AppleSMC fan and temperature keys when installed with the local installer. If AppleSMC is unavailable after a system update, the app safely displays `--°`, returns to `System Auto`, and disables fan controls instead of crashing or retrying aggressively.
 
 That fallback is intentional: this project prioritizes low overhead and safe System Auto behavior over forcing private beta-system interfaces.
 
@@ -34,26 +34,34 @@ The installed Command Line Tools expose Swift Testing from a nonstandard framewo
 CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
 SWIFT_MODULE_CACHE_PATH=$PWD/.build/swift-module-cache \
 swift test --enable-swift-testing
+```
+
+In the Codex sandbox, add `--disable-sandbox`:
+
+```bash
+CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
+SWIFT_MODULE_CACHE_PATH=$PWD/.build/swift-module-cache \
+swift test --disable-sandbox --enable-swift-testing
 
 CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
 SWIFT_MODULE_CACHE_PATH=$PWD/.build/swift-module-cache \
-swift build --product MacFanApp
+swift build --disable-sandbox --product MacFanApp
 
 CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
 SWIFT_MODULE_CACHE_PATH=$PWD/.build/swift-module-cache \
-swift build --product MacFanHelper
+swift build --disable-sandbox --product MacFanHelper
 ```
 
 Smoke-test the helper:
 
 ```bash
-./.build/debug/MacFanHelper snapshot
+sudo ./.build/debug/MacFanHelper snapshot
 ```
 
-Expected safe fallback on the current beta system:
+Expected installed-helper output on the current target machine:
 
 ```text
-temperature=nil currentRPM=nil minRPM=nil maxRPM=nil control=false source=AppleSMC reason=smc_keys_unreadable
+temperature=31 currentRPM=0 minRPM=1199 maxRPM=7199 fanCount=1 modeKey=F0Md ftst=false control=true source=AppleSMC
 ```
 
 ## Run locally

@@ -17,8 +17,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 cp "$ROOT/.build/release/MacFanApp" "$APP/Contents/MacOS/MacFanApp"
 cp "$ROOT/.build/release/MacFanHelper" "$APP/Contents/Resources/MacFanHelper"
-cp "$ROOT/.build/release/MacFanHelper" "$APP/Contents/MacOS/MacFanHelper"
-chmod 755 "$APP/Contents/MacOS/MacFanApp" "$APP/Contents/Resources/MacFanHelper" "$APP/Contents/MacOS/MacFanHelper"
+chmod 755 "$APP/Contents/MacOS/MacFanApp" "$APP/Contents/Resources/MacFanHelper"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -56,7 +55,7 @@ if command -v xattr >/dev/null 2>&1; then
 fi
 
 if command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
+  codesign --force --deep --sign - "$APP" >/dev/null
 fi
 
 echo "$APP"

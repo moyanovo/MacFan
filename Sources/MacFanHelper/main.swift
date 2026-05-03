@@ -20,8 +20,8 @@ do {
             fputs("usage: MacFanHelper rpm <value>\n", stderr)
             exit(64)
         }
-        try client.setTargetRPM(rpm)
-        print("ok=true rpm=\(rpm)")
+        let appliedRPM = try client.setTargetRPM(rpm)
+        print("ok=true rpm=\(appliedRPM)")
     default:
         fputs("usage: MacFanHelper snapshot|auto|rpm <value>\n", stderr)
         exit(64)

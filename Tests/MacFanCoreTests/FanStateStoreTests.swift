@@ -3,18 +3,33 @@ import Testing
 
 actor RecordingFanClient: FanControlClient {
     var snapshotValue = FanSnapshot(temperatureCelsius: 52, currentRPM: 1800, range: FanRange(minRPM: 1200, maxRPM: 7200), isControlAvailable: true)
+    var shouldFailWrites = false
     private(set) var restoredSystemAutoCount = 0
     private(set) var targetRPMs: [Int] = []
 
     func snapshot() async -> FanSnapshot { snapshotValue }
 
+    func setSnapshotValue(_ snapshot: FanSnapshot) {
+        snapshotValue = snapshot
+    }
+
+    func setShouldFailWrites(_ shouldFail: Bool) {
+        shouldFailWrites = shouldFail
+    }
+
     func restoreSystemAuto() async throws {
+        if shouldFailWrites { throw TestFanError.writeFailed }
         restoredSystemAutoCount += 1
     }
 
     func setTargetRPM(_ rpm: Int) async throws {
+        if shouldFailWrites { throw TestFanError.writeFailed }
         targetRPMs.append(rpm)
     }
+}
+
+enum TestFanError: Error {
+    case writeFailed
 }
 
 @MainActor
@@ -73,5 +88,40 @@ struct FanStateStoreTests {
 
         let restores = await client.restoredSystemAutoCount
         #expect(restores == 1)
+    }
+
+    @Test func refreshUnavailableFallsBackToSystemAuto() async throws {
+        let client = RecordingFanClient()
+        let store = FanStateStore(client: client)
+
+        try await store.setManualRPM(2100, now: 0.0)
+        await client.setSnapshotValue(.unavailable)
+        await store.refreshSnapshot()
+
+        #expect(store.mode == .systemAuto)
+    }
+
+    @Test func failedPresetWriteDoesNotChangeMode() async {
+        let client = RecordingFanClient()
+        let store = FanStateStore(client: client)
+        await client.setShouldFailWrites(true)
+
+        do {
+            try await store.selectPreset(.balanced)
+        } catch {}
+
+        #expect(store.mode == .systemAuto)
+    }
+
+    @Test func failedManualWriteDoesNotChangeMode() async {
+        let client = RecordingFanClient()
+        let store = FanStateStore(client: client)
+        await client.setShouldFailWrites(true)
+
+        do {
+            try await store.setManualRPM(2100, now: 0.0)
+        } catch {}
+
+        #expect(store.mode == .systemAuto)
     }
 }
