@@ -10,6 +10,9 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
     private let onQuit: () -> Void
     private var manualRPM: Int?
     private weak var manualValueLabel: NSTextField?
+    private weak var temperatureItem: NSMenuItem?
+    private weak var fanItem: NSMenuItem?
+    private weak var rpmItem: NSMenuItem?
 
     var openHandler: (() -> Void)?
     var closeHandler: (() -> Void)?
@@ -51,11 +54,21 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
         menu.addItem(actionItem(title: "Quit MacFan", action: #selector(quitPressed), symbol: "power"))
     }
 
+    func refreshFromStore() {
+        updateHeaderItems()
+    }
+
     private func addHeader() {
         menu.addItem(sectionItem("MacFan"))
-        menu.addItem(disabledItem(title: "CPU / SoC", subtitle: store.snapshot.temperatureCelsius.map { "\($0)°" } ?? "--°"))
-        menu.addItem(disabledItem(title: "Fan", subtitle: store.snapshot.isControlAvailable ? store.mode.displayName : "Unavailable"))
-        menu.addItem(disabledItem(title: "RPM", subtitle: store.snapshot.currentRPM.map { "\($0) RPM" } ?? "—"))
+        let temperatureItem = disabledItem(title: "CPU / SoC", subtitle: store.snapshot.temperatureCelsius.map { "\($0)°" } ?? "--°")
+        let fanItem = disabledItem(title: "Fan", subtitle: store.snapshot.isControlAvailable ? store.mode.displayName : "Unavailable")
+        let rpmItem = disabledItem(title: "RPM", subtitle: store.snapshot.currentRPM.map { "\($0) RPM" } ?? "—")
+        self.temperatureItem = temperatureItem
+        self.fanItem = fanItem
+        self.rpmItem = rpmItem
+        menu.addItem(temperatureItem)
+        menu.addItem(fanItem)
+        menu.addItem(rpmItem)
     }
 
     private func addModes() {
@@ -68,14 +81,15 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
     }
 
     private func addManualControls() {
-        let item = actionItem(
+        let item = buttonItem(
             title: "Manual Linear Control",
             subtitle: "Set an exact fan speed",
-            action: #selector(manualTogglePressed),
-            symbol: "slider.horizontal.3"
+            symbol: "slider.horizontal.3",
+            checked: store.mode == .manualLinear,
+            enabled: store.snapshot.isControlAvailable,
+            identifier: "manualLinearToggle",
+            action: #selector(manualTogglePressed(_:))
         )
-        item.state = store.mode == .manualLinear ? .on : .off
-        item.isEnabled = store.snapshot.isControlAvailable
         menu.addItem(item)
 
         if store.mode == .manualLinear {
@@ -84,22 +98,28 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
     }
 
     private func addLaunchAtLogin() {
-        let item = actionItem(
+        let item = buttonItem(
             title: "Launch at Login",
             subtitle: "Show temperature automatically",
-            action: #selector(launchAtLoginPressed),
-            symbol: "power.circle"
+            symbol: "power.circle",
+            checked: loginItemManager.isLaunchAtLoginEnabled,
+            enabled: true,
+            identifier: "launchAtLogin",
+            action: #selector(launchAtLoginPressed(_:))
         )
-        item.state = loginItemManager.isLaunchAtLoginEnabled ? .on : .off
         menu.addItem(item)
     }
 
     private func modeItem(_ mode: FanMode, title: String, subtitle: String, symbol: String) -> NSMenuItem {
-        let item = actionItem(title: title, subtitle: subtitle, action: #selector(modePressed(_:)), symbol: symbol)
-        item.representedObject = mode.identifier
-        item.state = store.mode == mode ? .on : .off
-        item.isEnabled = store.snapshot.isControlAvailable || mode == .systemAuto
-        return item
+        buttonItem(
+            title: title,
+            subtitle: subtitle,
+            symbol: symbol,
+            checked: store.mode == mode,
+            enabled: store.snapshot.isControlAvailable || mode == .systemAuto,
+            identifier: mode.identifier,
+            action: #selector(modePressed(_:))
+        )
     }
 
     private func manualSliderItem() -> NSMenuItem {
@@ -132,6 +152,65 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
         return item
     }
 
+    private func buttonItem(
+        title: String,
+        subtitle: String?,
+        symbol: String?,
+        checked: Bool,
+        enabled: Bool,
+        identifier: String,
+        action: Selector
+    ) -> NSMenuItem {
+        let height: CGFloat = subtitle == nil ? 34 : 46
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 310, height: height))
+        container.alphaValue = enabled ? 1.0 : 0.42
+
+        let check = NSTextField(labelWithString: checked ? "✓" : "")
+        check.font = .systemFont(ofSize: 18, weight: .semibold)
+        check.textColor = .labelColor
+        check.alignment = .center
+        check.frame = NSRect(x: 12, y: (height - 22) / 2, width: 22, height: 22)
+        container.addSubview(check)
+
+        if let symbol, let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+            image.isTemplate = true
+            let imageView = NSImageView(image: image)
+            imageView.contentTintColor = .secondaryLabelColor
+            imageView.frame = NSRect(x: 44, y: (height - 18) / 2, width: 18, height: 18)
+            container.addSubview(imageView)
+        }
+
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        titleLabel.textColor = .labelColor
+        titleLabel.frame = NSRect(x: 76, y: subtitle == nil ? 8 : 22, width: 218, height: 18)
+        container.addSubview(titleLabel)
+
+        if let subtitle {
+            let subtitleLabel = NSTextField(labelWithString: subtitle)
+            subtitleLabel.font = .systemFont(ofSize: 11, weight: .regular)
+            subtitleLabel.textColor = .secondaryLabelColor
+            subtitleLabel.frame = NSRect(x: 76, y: 7, width: 218, height: 14)
+            container.addSubview(subtitleLabel)
+        }
+
+        let button = NSButton(frame: container.bounds)
+        button.identifier = NSUserInterfaceItemIdentifier(identifier)
+        button.target = self
+        button.action = action
+        button.isEnabled = enabled
+        button.isBordered = false
+        button.title = ""
+        button.focusRingType = .none
+        button.setButtonType(.momentaryChange)
+        container.addSubview(button)
+
+        let item = NSMenuItem()
+        item.view = container
+        item.isEnabled = enabled
+        return item
+    }
+
     private func actionItem(title: String, subtitle: String? = nil, action: Selector, symbol: String? = nil) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.target = self
@@ -148,7 +227,7 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
     private func disabledItem(title: String, subtitle: String? = nil) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         item.isEnabled = false
-        apply(subtitle, to: item)
+        set(title: title, subtitle: subtitle, on: item)
         return item
     }
 
@@ -161,6 +240,24 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
         return item
     }
 
+    private func updateHeaderItems() {
+        if let temperatureItem {
+            set(title: "CPU / SoC", subtitle: store.snapshot.temperatureCelsius.map { "\($0)°" } ?? "--°", on: temperatureItem)
+        }
+        if let fanItem {
+            set(title: "Fan", subtitle: store.snapshot.isControlAvailable ? store.mode.displayName : "Unavailable", on: fanItem)
+        }
+        if let rpmItem {
+            set(title: "RPM", subtitle: store.snapshot.currentRPM.map { "\($0) RPM" } ?? "—", on: rpmItem)
+        }
+    }
+
+    private func set(title: String, subtitle: String?, on item: NSMenuItem) {
+        item.title = title
+        item.attributedTitle = nil
+        apply(subtitle, to: item)
+    }
+
     private func apply(_ subtitle: String?, to item: NSMenuItem) {
         guard let subtitle else { return }
         if #available(macOS 14.4, *) {
@@ -170,8 +267,8 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
         }
     }
 
-    @objc private func modePressed(_ sender: NSMenuItem) {
-        guard let identifier = sender.representedObject as? String, let mode = FanMode(identifier: identifier) else { return }
+    @objc private func modePressed(_ sender: NSButton) {
+        guard let identifier = sender.identifier?.rawValue, let mode = FanMode(identifier: identifier) else { return }
         Task {
             switch mode {
             case .systemAuto:
@@ -187,7 +284,7 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
         }
     }
 
-    @objc private func manualTogglePressed() {
+    @objc private func manualTogglePressed(_ sender: NSButton) {
         Task {
             if store.mode == .manualLinear {
                 try? await store.returnToSystemAuto()
@@ -210,7 +307,7 @@ final class NativeStatusMenuController: NSObject, NSMenuDelegate {
         }
     }
 
-    @objc private func launchAtLoginPressed() {
+    @objc private func launchAtLoginPressed(_ sender: NSButton) {
         loginItemManager.setLaunchAtLogin(!loginItemManager.isLaunchAtLoginEnabled)
         rebuildMenu()
     }

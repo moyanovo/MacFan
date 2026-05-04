@@ -36,6 +36,7 @@ public struct FanSnapshot: Equatable, Sendable {
 }
 
 public protocol FanControlClient: Sendable {
+    func temperatureCelsius() async -> Int?
     func snapshot() async -> FanSnapshot
     func restoreSystemAuto() async throws
     func setTargetRPM(_ rpm: Int) async throws

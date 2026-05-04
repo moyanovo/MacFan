@@ -38,10 +38,10 @@ final class MenuBarController: NSObject {
 
     private func startClosedStateTimer() {
         timer?.invalidate()
-        Task { await refreshStatusTitle() }
+        Task { await refreshClosedTemperatureTitle() }
         let timer = Timer(timeInterval: PerformancePolicy.closedMenuTemperatureInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                await self?.refreshStatusTitle()
+                await self?.refreshClosedTemperatureTitle()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -51,23 +51,37 @@ final class MenuBarController: NSObject {
     private func startOpenStateTimer(refreshNow: Bool = true) {
         timer?.invalidate()
         if refreshNow {
-            Task { await refreshStatusTitle() }
+            Task { await refreshOpenSnapshot() }
         }
         let timer = Timer(timeInterval: PerformancePolicy.openMenuRefreshInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                await self?.refreshStatusTitle()
+                await self?.refreshOpenSnapshot()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
-    private func refreshStatusTitle() async {
+    private func refreshClosedTemperatureTitle() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        await store.refreshTemperatureOnly()
+        updateStatusTitle()
+    }
+
+    private func refreshOpenSnapshot() async {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
 
         await store.refreshSnapshot()
+        updateStatusTitle()
+        menuController.refreshFromStore()
+    }
+
+    private func updateStatusTitle() {
         if let temperature = store.snapshot.temperatureCelsius {
             statusItem.button?.title = "\(temperature)°"
         } else {

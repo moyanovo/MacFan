@@ -12,6 +12,13 @@ struct AppFanControlClient: FanControlClient {
         self.helperURL = helperURL
     }
 
+    func temperatureCelsius() async -> Int? {
+        guard let output = await runHelper(arguments: ["temperature"]) else {
+            return nil
+        }
+        return Int(Self.field("temperature", in: output) ?? "")
+    }
+
     func snapshot() async -> FanSnapshot {
         guard let output = await runHelper(arguments: ["snapshot"]) else {
             return .unavailable
@@ -79,6 +86,15 @@ struct AppFanControlClient: FanControlClient {
         let sibling = productDirectory?.appendingPathComponent("MacFanHelper")
         if let sibling, fileManager.isExecutableFile(atPath: sibling.path) {
             return sibling
+        }
+        return nil
+    }
+
+    fileprivate static func field(_ name: String, in output: String) -> String? {
+        for token in output.split(separator: " ") {
+            let parts = token.split(separator: "=", maxSplits: 1).map(String.init)
+            guard parts.count == 2, parts[0] == name else { continue }
+            return parts[1]
         }
         return nil
     }

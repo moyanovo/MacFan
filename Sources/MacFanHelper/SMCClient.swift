@@ -3,6 +3,19 @@ import IOKit
 import MacFanCore
 
 struct SMCClient {
+    func temperature() -> String {
+        do {
+            let smc = try SMCConnection()
+            let temperature = smc.firstTemperature(keys: Self.temperatureKeys)
+            return [
+                "temperature=\(temperature.map(String.init) ?? "nil")",
+                "source=AppleSMC"
+            ].joined(separator: " ")
+        } catch {
+            return "temperature=nil source=AppleSMC reason=apple_smc_unavailable"
+        }
+    }
+
     func snapshot() -> String {
         do {
             let smc = try SMCConnection()

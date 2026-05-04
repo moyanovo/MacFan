@@ -10,18 +10,52 @@ public final class FanStateStore {
     private let manualWritePolicy: ManualWritePolicy
     private var lastManualWriteTime: TimeInterval?
     private var lastManualRPM: Int?
+    private var targetRPM: Int?
+    private var lastTargetWriteTime: TimeInterval?
+    private let targetReassertInterval: TimeInterval = 5.0
 
     public init(client: any FanControlClient, manualWritePolicy: ManualWritePolicy = ManualWritePolicy()) {
         self.client = client
         self.manualWritePolicy = manualWritePolicy
     }
 
-    public func refreshSnapshot() async {
+    public func refreshTemperatureOnly() async {
+        let temperature = await client.temperatureCelsius()
+        snapshot = FanSnapshot(
+            temperatureCelsius: temperature,
+            currentRPM: snapshot.currentRPM,
+            range: snapshot.range,
+            isControlAvailable: snapshot.isControlAvailable
+        )
+    }
+
+    public func refreshSnapshot(now: TimeInterval = Date().timeIntervalSince1970) async {
         snapshot = await client.snapshot()
         if !snapshot.isControlAvailable {
             mode = .systemAuto
             lastManualWriteTime = nil
             lastManualRPM = nil
+            targetRPM = nil
+            lastTargetWriteTime = nil
+            return
+        }
+
+        guard mode != .systemAuto,
+              snapshot.currentRPM == 0,
+              let rpm = targetRPM ?? lastManualRPM else {
+            return
+        }
+
+        if let lastTargetWriteTime, now - lastTargetWriteTime < targetReassertInterval {
+            return
+        }
+
+        do {
+            try await client.setTargetRPM(rpm)
+            lastTargetWriteTime = now
+            lastErrorMessage = nil
+        } catch {
+            lastErrorMessage = "Could not keep fan target"
         }
     }
 
@@ -30,6 +64,8 @@ public final class FanStateStore {
         mode = .systemAuto
         lastManualWriteTime = nil
         lastManualRPM = nil
+        targetRPM = nil
+        lastTargetWriteTime = nil
         lastErrorMessage = nil
     }
 
@@ -45,6 +81,8 @@ public final class FanStateStore {
         mode = .preset(preset)
         lastManualWriteTime = nil
         lastManualRPM = rpm
+        targetRPM = rpm
+        lastTargetWriteTime = Date().timeIntervalSince1970
         lastErrorMessage = nil
     }
 
@@ -63,6 +101,8 @@ public final class FanStateStore {
         mode = .manualLinear
         lastManualWriteTime = now
         lastManualRPM = clamped
+        targetRPM = clamped
+        lastTargetWriteTime = now
         lastErrorMessage = nil
     }
 

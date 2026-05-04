@@ -4,12 +4,14 @@ let client = SMCClient()
 let arguments = Array(CommandLine.arguments.dropFirst())
 
 guard let command = arguments.first else {
-    fputs("usage: MacFanHelper snapshot|auto|rpm <value>\n", stderr)
+    fputs("usage: MacFanHelper snapshot|temperature|auto|rpm <value>\n", stderr)
     exit(64)
 }
 
 do {
     switch command {
+    case "temperature":
+        print(client.temperature())
     case "snapshot":
         print(client.snapshot())
     case "auto":
@@ -23,7 +25,7 @@ do {
         let appliedRPM = try client.setTargetRPM(rpm)
         print("ok=true rpm=\(appliedRPM)")
     default:
-        fputs("usage: MacFanHelper snapshot|auto|rpm <value>\n", stderr)
+        fputs("usage: MacFanHelper snapshot|temperature|auto|rpm <value>\n", stderr)
         exit(64)
     }
 } catch {
