@@ -164,4 +164,16 @@ struct FanStateStoreTests {
         let writes = await client.targetRPMs
         #expect(writes == [2100, 2100])
     }
+
+    @Test func manualTargetIsNotReassertedBeforeInterval() async throws {
+        let client = RecordingFanClient()
+        let store = FanStateStore(client: client)
+
+        try await store.setManualRPM(2100, now: 0.0)
+        await client.setSnapshotValue(FanSnapshot(temperatureCelsius: 52, currentRPM: 0, range: FanRange(minRPM: 1200, maxRPM: 7200), isControlAvailable: true))
+        await store.refreshSnapshot(now: 4.0)
+
+        let writes = await client.targetRPMs
+        #expect(writes == [2100])
+    }
 }

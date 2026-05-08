@@ -1,7 +1,7 @@
 import Foundation
 
 public enum PerformancePolicy {
-    public static let closedMenuTemperatureInterval: TimeInterval = 5.0
+    public static let closedMenuTemperatureInterval: TimeInterval = 10.0
     public static let openMenuRefreshInterval: TimeInterval = 1.0
 }
 

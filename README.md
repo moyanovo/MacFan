@@ -50,9 +50,12 @@ MacFan should stay safe on unsupported systems: if AppleSMC access is unavailabl
 
 1. Download `MacFan-v1.0.0.zip` from the GitHub Release.
 2. Unzip it.
-3. Run the included app or use the local installer script from source if you need the privileged helper installed system-wide.
+3. Double-click `Install.command`.
+4. Approve the administrator prompt. This installs the small AppleSMC helper at `/Library/PrivilegedHelperTools/com.moyanovo.MacFanHelper`, which is required for full temperature and fan control.
 
-> Note: this first release is ad-hoc signed for local use, not notarized through Apple Developer ID.
+You can run `MacFan.app` directly, but without the installed helper the app may safely fall back to `--°` and disabled fan controls.
+
+> Note: this release is ad-hoc signed for local use, not notarized through Apple Developer ID.
 
 ### Build from source
 
@@ -64,6 +67,18 @@ The packaged app will be created at:
 
 ```text
 dist/MacFan.app
+```
+
+Build the GitHub Release zip:
+
+```bash
+./Scripts/package_release.sh
+```
+
+The release zip will be created at:
+
+```text
+dist/MacFan-v1.0.0.zip
 ```
 
 Install locally with the privileged helper:
@@ -128,9 +143,12 @@ MacFan 是一个为 **MacBook Pro 13-inch, M1, 2020** 专门优化的原生 macO
 
 1. 在 GitHub Release 下载 `MacFan-v1.0.0.zip`。
 2. 解压。
-3. 直接运行 App；如果需要安装系统级 privileged helper，请使用源码里的本地安装脚本。
+3. 双击 `Install.command`。
+4. 批准管理员权限提示。这个步骤会把小型 AppleSMC helper 安装到 `/Library/PrivilegedHelperTools/com.moyanovo.MacFanHelper`，完整温度读取和风扇控制需要它。
 
-> 注意：第一个正式版使用本地 ad-hoc 签名，没有经过 Apple Developer ID notarization。
+你也可以直接运行 `MacFan.app`，但如果没有安装 helper，应用会安全降级为 `--°` 和禁用风扇控制。
+
+> 注意：这个版本使用本地 ad-hoc 签名，没有经过 Apple Developer ID notarization。
 
 ### 从源码构建
 
@@ -142,6 +160,18 @@ MacFan 是一个为 **MacBook Pro 13-inch, M1, 2020** 专门优化的原生 macO
 
 ```text
 dist/MacFan.app
+```
+
+构建 GitHub Release zip：
+
+```bash
+./Scripts/package_release.sh
+```
+
+Release zip 输出位置：
+
+```text
+dist/MacFan-v1.0.0.zip
 ```
 
 安装到本机并安装 privileged helper：

@@ -4,7 +4,7 @@ import Testing
 @Suite
 struct PerformancePolicyTests {
     @Test func closedMenuPollingIsLowFrequency() {
-        #expect(PerformancePolicy.closedMenuTemperatureInterval == 5.0)
+        #expect(PerformancePolicy.closedMenuTemperatureInterval == 10.0)
     }
 
     @Test func openMenuPollingIsStillModerate() {
