@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="1.0.0"
+VERSION="1.0.1"
 DIST="$ROOT/dist"
 APP="$DIST/MacFan.app"
 RELEASE_DIR="$DIST/MacFan-v$VERSION"
@@ -53,7 +53,7 @@ echo "Uninstalled MacFan"
 UNINSTALL
 
 cat > "$RELEASE_DIR/README.txt" <<'README'
-MacFan v1.0.0
+MacFan v1.0.1
 
 Install:
 1. Open this folder.

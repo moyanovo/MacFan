@@ -13,7 +13,7 @@
   <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-6-orange">
   <img alt="UI" src="https://img.shields.io/badge/UI-AppKit-blue">
-  <img alt="Release" src="https://img.shields.io/badge/release-v1.0.0-brightgreen">
+  <img alt="Release" src="https://img.shields.io/badge/release-v1.0.1-brightgreen">
 </p>
 
 ---
@@ -48,7 +48,7 @@ MacFan should stay safe on unsupported systems: if AppleSMC access is unavailabl
 
 ### Install from release
 
-1. Download `MacFan-v1.0.0.zip` from the GitHub Release.
+1. Download `MacFan-v1.0.1.zip` from the GitHub Release.
 2. Unzip it.
 3. Double-click `Install.command`.
 4. Approve the administrator prompt. This installs the small AppleSMC helper at `/Library/PrivilegedHelperTools/com.moyanovo.MacFanHelper`, which is required for full temperature and fan control.
@@ -78,7 +78,7 @@ Build the GitHub Release zip:
 The release zip will be created at:
 
 ```text
-dist/MacFan-v1.0.0.zip
+dist/MacFan-v1.0.1.zip
 ```
 
 Install locally with the privileged helper:
@@ -141,7 +141,7 @@ MacFan 是一个为 **MacBook Pro 13-inch, M1, 2020** 专门优化的原生 macO
 
 ### 从 Release 安装
 
-1. 在 GitHub Release 下载 `MacFan-v1.0.0.zip`。
+1. 在 GitHub Release 下载 `MacFan-v1.0.1.zip`。
 2. 解压。
 3. 双击 `Install.command`。
 4. 批准管理员权限提示。这个步骤会把小型 AppleSMC helper 安装到 `/Library/PrivilegedHelperTools/com.moyanovo.MacFanHelper`，完整温度读取和风扇控制需要它。
@@ -171,7 +171,7 @@ dist/MacFan.app
 Release zip 输出位置：
 
 ```text
-dist/MacFan-v1.0.0.zip
+dist/MacFan-v1.0.1.zip
 ```
 
 安装到本机并安装 privileged helper：
