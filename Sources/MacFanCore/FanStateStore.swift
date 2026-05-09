@@ -60,7 +60,12 @@ public final class FanStateStore {
     }
 
     public func returnToSystemAuto() async throws {
-        try await client.restoreSystemAuto()
+        do {
+            try await client.restoreSystemAuto()
+        } catch {
+            lastErrorMessage = "Could not restore System Auto"
+            throw error
+        }
         mode = .systemAuto
         lastManualWriteTime = nil
         lastManualRPM = nil
@@ -77,7 +82,12 @@ public final class FanStateStore {
             return
         }
         let rpm = preset.targetRPM(in: range)
-        try await client.setTargetRPM(rpm)
+        do {
+            try await client.setTargetRPM(rpm)
+        } catch {
+            lastErrorMessage = "Could not set fan target"
+            throw error
+        }
         mode = .preset(preset)
         lastManualWriteTime = nil
         lastManualRPM = rpm
@@ -97,7 +107,12 @@ public final class FanStateStore {
         guard manualWritePolicy.shouldWrite(lastWriteTime: lastManualWriteTime, lastRPM: lastManualRPM, newTime: now, newRPM: clamped) else {
             return
         }
-        try await client.setTargetRPM(clamped)
+        do {
+            try await client.setTargetRPM(clamped)
+        } catch {
+            lastErrorMessage = "Could not set fan target"
+            throw error
+        }
         mode = .manualLinear
         lastManualWriteTime = now
         lastManualRPM = clamped

@@ -116,7 +116,7 @@ struct FanStateStoreTests {
         #expect(store.mode == .systemAuto)
     }
 
-    @Test func failedPresetWriteDoesNotChangeMode() async {
+    @Test func failedPresetWriteReportsErrorAndDoesNotChangeMode() async {
         let client = RecordingFanClient()
         let store = FanStateStore(client: client)
         await client.setShouldFailWrites(true)
@@ -126,9 +126,10 @@ struct FanStateStoreTests {
         } catch {}
 
         #expect(store.mode == .systemAuto)
+        #expect(store.lastErrorMessage == "Could not set fan target")
     }
 
-    @Test func failedManualWriteDoesNotChangeMode() async {
+    @Test func failedManualWriteReportsErrorAndDoesNotChangeMode() async {
         let client = RecordingFanClient()
         let store = FanStateStore(client: client)
         await client.setShouldFailWrites(true)
@@ -138,6 +139,19 @@ struct FanStateStoreTests {
         } catch {}
 
         #expect(store.mode == .systemAuto)
+        #expect(store.lastErrorMessage == "Could not set fan target")
+    }
+
+    @Test func failedSystemAutoRestoreReportsError() async {
+        let client = RecordingFanClient()
+        let store = FanStateStore(client: client)
+        await client.setShouldFailWrites(true)
+
+        do {
+            try await store.returnToSystemAuto()
+        } catch {}
+
+        #expect(store.lastErrorMessage == "Could not restore System Auto")
     }
 
     @Test func temperatureOnlyRefreshDoesNotReadFanSnapshot() async {

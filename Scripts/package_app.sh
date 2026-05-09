@@ -7,8 +7,7 @@ cd "$ROOT"
 export CLANG_MODULE_CACHE_PATH="$ROOT/.build/clang-module-cache"
 export SWIFT_MODULE_CACHE_PATH="$ROOT/.build/swift-module-cache"
 
-swift build --disable-sandbox -c release --product MacFanApp
-swift build --disable-sandbox -c release --product MacFanHelper
+swift build --disable-sandbox -c release
 
 DIST="$ROOT/dist"
 APP="$DIST/MacFan.app"
